@@ -1,3 +1,5 @@
+import math
+
 import cv2
 import matplotlib
 import numpy as np
@@ -29,8 +31,8 @@ class MyConv2D:
         self.set_padding(pad)
 
         self.ndim = img.ndim
-        self.h_out, self.w_out = calculate_conv_output_hw(self.get_h_in(), self.get_w_in(), self.padding,
-                                                          self.get_kernel_size(), self.stride)
+        self.h_out, self.w_out = (0, 0)#calculate_conv_output_hw(self.get_h_in(), self.get_w_in(), self.padding,
+                                                         # self.get_kernel_size(), self.stride)
 
     def get_kernel_size(self):
         return self.kernel.shape
@@ -59,7 +61,7 @@ class MyConv2D:
 
     def set_kernel(self, kernel, flip):
         if flip:
-            self. kernel = kernel ## need to flip
+            self. kernel = np.flipud(kernel)
         else:
             self. kernel = kernel
 
@@ -79,16 +81,16 @@ class MyConv2D:
         height, width = self.img.shape
         new_img = np.zeros((height, width), dtype=np.uint8)  # Ensures pixel values are integers
         kernel_height, kernel_width = self.kernel.shape
+        kernel_flat = self.kernel.flatten()
+
         for y in range(height - kernel_height + 1):  # Loop over Y-axis (rows)
             for x in range(width - kernel_width + 1):  # Loop over X-axis (columns)
                 end_x = x+kernel_width
                 end_y = y+kernel_height
-                # Extract the submatrix (region from image)
                 sub_matrix = self.img[y:end_y, x:end_x]
-                result = np.dot(sub_matrix.flatten(), self.kernel.flatten())
-                new_img[x, y] = result
-
-        pass
+                result = np.abs(np.dot(sub_matrix.flatten(), kernel_flat))
+                new_img[y, x] = np.clip(result, 0, 255)
+        self.img = new_img
 
     def my_conv_multi_channel(self):
         # Your code
@@ -97,7 +99,7 @@ class MyConv2D:
 
 def calculate_padding_single_dim(dim_in, dim_out, kernel_size, stride=1):
     # https://pytorch.org/docs/stable/generated/torch.nn.Conv2d.html#torch.nn.Conv2d
-    return # Your Code 
+    return math.floor((dim_out - 1) * stride + kernel_size - dim_in) // 2 # Your Code
 
 
 
